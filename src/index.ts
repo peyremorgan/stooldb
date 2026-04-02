@@ -5,6 +5,8 @@ import { SnapshotManager } from "./core/SnapshotManager.js";
 import { StreamReader } from "./core/StreamReader.js";
 import { StreamWriter } from "./core/StreamWriter.js";
 import type { AppendInput, EventEnvelope, SnapshotRecord } from "./core/types.js";
+import type { InferState, StateSchema } from "./state/schema.js";
+import { ReactiveStateStore } from "./state/store.js";
 import { createStorePaths } from "./storage/paths.js";
 
 export interface StoolDBOptions {
@@ -102,6 +104,22 @@ export class StoolDB {
 
 		const snapshotSequence = events[events.length - 1].sequence;
 		return this.snapshots.createSnapshot(streamId, snapshotSequence, state);
+	}
+
+	public createStateStore<TSchema extends StateSchema>(options: {
+		streamId: string;
+		schema: TSchema;
+		initialState: InferState<TSchema>;
+	}): ReactiveStateStore<TSchema> {
+		return new ReactiveStateStore<TSchema>(
+			{
+				append: async (input) => this.append(input),
+				readEvents: async (streamId) => this.readEvents(streamId),
+				registerEventSchema: (eventType, schemaVersion, schema) =>
+					this.registerEventSchema(eventType, schemaVersion, schema)
+			},
+			options
+		);
 	}
 }
 
