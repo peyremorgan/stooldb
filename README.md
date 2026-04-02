@@ -25,6 +25,9 @@ Implemented:
 - Stream append/read/replay.
 - Deterministic conflict rejection + quarantine artifacts.
 - Snapshot create/load during replay.
+- High-level schema-driven state store API with reactive state stream.
+- Primitive field transitions with predefined accumulators.
+- Collection field transitions including declarative `updateWhere`.
 
 Not yet implemented:
 
@@ -81,6 +84,79 @@ const value = await db.replay(
 	0
 );
 ```
+
+## High-Level State API
+
+Define a state schema once, then apply typed, constrained transitions.
+
+```ts
+import { StoolDB } from "./src/index.js";
+import { defineStateSchema } from "./src/state/schema.js";
+
+const db = new StoolDB({ rootDir: "./data" });
+await db.init();
+
+const schema = defineStateSchema({
+	type: "object",
+	fields: {
+		counter: { type: "number" },
+		label: { type: "string" },
+		enabled: { type: "boolean" },
+		users: {
+			type: "array",
+			items: {
+				type: "object",
+				fields: {
+					id: { type: "number" },
+					active: { type: "boolean" }
+				}
+			}
+		}
+	}
+});
+
+const store = db.createStateStore({
+	streamId: "app-state",
+	schema,
+	initialState: {
+		counter: 0,
+		label: "",
+		enabled: false,
+		users: []
+	}
+});
+
+await store.init();
+
+await store.apply({ kind: "number.increment", path: ["counter"], by: 1 });
+await store.apply({ kind: "string.append", path: ["label"], value: "ok" });
+await store.apply({ kind: "boolean.toggle", path: ["enabled"] });
+await store.apply({ kind: "array.push", path: ["users"], value: { id: 1, active: false } });
+await store.apply({
+	kind: "array.updateWhere",
+	path: ["users"],
+	where: { fieldPath: ["id"], op: "eq", value: 1 },
+	mutate: { fieldPath: ["active"], action: "toggle" }
+});
+
+const snapshot = store.getState();
+```
+
+Supported primitive transitions:
+
+- number: `increment`, `decrement`, `set`
+- string: `append`, `set`
+- boolean: `toggle`, `set`
+
+Supported collection transitions:
+
+- `push`, `pop`, `shift`
+- `updateWhere` using declarative predicate and mutation specs
+
+State observability:
+
+- `store.state$` exposes reactive state updates via RxJS.
+- `store.mutations$` exposes applied mutation events.
 
 ## Build And Test
 

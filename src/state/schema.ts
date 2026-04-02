@@ -33,7 +33,9 @@ export type InferState<TSchema extends StateSchema> =
   TSchema extends ObjectSchema<infer TFields> ? { [K in keyof TFields]: InferState<TFields[K]> } :
   never;
 
-export function defineStateSchema<TSchema extends StateSchema>(schema: TSchema): TSchema {
+type EnsureSupportedSchema<TSchema extends StateSchema> = InferState<TSchema> extends never ? never : TSchema;
+
+export function defineStateSchema<TSchema extends StateSchema>(schema: EnsureSupportedSchema<TSchema>): TSchema {
   return schema;
 }
 
