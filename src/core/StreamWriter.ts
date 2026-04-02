@@ -1,4 +1,5 @@
 import { appendJsonLine, ensureStoreDirectories, writeJsonAtomic } from "./fs.js";
+import { randomUUID } from "node:crypto";
 import { detectConflict } from "./ConflictDetector.js";
 import type {
   AppendInput,
@@ -30,6 +31,8 @@ export interface AppendErrorResult {
 }
 
 export class StreamWriter {
+  private writerLocalSequence = 0;
+
   public constructor(
     private readonly paths: StorePaths,
     private readonly processId: string,
@@ -55,6 +58,8 @@ export class StreamWriter {
         sequence: nextSequence,
         timestamp: input.timestamp ?? new Date().toISOString(),
         processId: this.processId,
+        eventId: randomUUID(),
+        writerLocalSequence: this.nextWriterLocalSequence(),
         type: input.type,
         schemaVersion: input.schemaVersion,
         data: input.data,
@@ -120,5 +125,10 @@ export class StreamWriter {
       rejected
     );
     await appendJsonLine(auditLogPath(this.paths, streamId), audit);
+  }
+
+  private nextWriterLocalSequence(): number {
+    this.writerLocalSequence += 1;
+    return this.writerLocalSequence;
   }
 }

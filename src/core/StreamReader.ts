@@ -77,6 +77,17 @@ function compareEventCandidates(left: EventFileCandidate, right: EventFileCandid
     return processOrder;
   }
 
+  const writerSequenceOrder = (left.envelope.writerLocalSequence ?? Number.MAX_SAFE_INTEGER)
+    - (right.envelope.writerLocalSequence ?? Number.MAX_SAFE_INTEGER);
+  if (writerSequenceOrder !== 0) {
+    return writerSequenceOrder;
+  }
+
+  const eventIdOrder = (left.envelope.eventId ?? "~").localeCompare(right.envelope.eventId ?? "~");
+  if (eventIdOrder !== 0) {
+    return eventIdOrder;
+  }
+
   const fileOrder = left.fileName.localeCompare(right.fileName);
   if (fileOrder !== 0) {
     return fileOrder;

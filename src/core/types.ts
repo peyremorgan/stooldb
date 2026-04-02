@@ -6,6 +6,8 @@ export interface EventEnvelope<TData = unknown> {
   sequence: number;
   timestamp: string;
   processId: string;
+  eventId?: string;
+  writerLocalSequence?: number;
   type: string;
   schemaVersion: string;
   data: TData;

@@ -40,6 +40,10 @@ test("append events and replay state", async () => {
   assert.equal(events.length, 2);
   assert.equal(events[0].sequence, 1);
   assert.equal(events[1].sequence, 2);
+  assert.equal(typeof events[0].eventId, "string");
+  assert.equal(typeof events[1].eventId, "string");
+  assert.equal(events[0].writerLocalSequence, 1);
+  assert.equal(events[1].writerLocalSequence, 2);
 
   const replayed = await db.replay(
     "counter-1",
