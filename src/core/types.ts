@@ -57,5 +57,6 @@ export interface AppendInput<TData = unknown> {
   type: string;
   schemaVersion: string;
   data: TData;
+  timestamp?: string;
   metadata?: Record<string, unknown>;
 }
