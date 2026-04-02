@@ -13,9 +13,9 @@ import { FileLock } from "../locking/FileLock.js";
 import type { StorePaths } from "../storage/paths.js";
 import {
   auditLogPath,
-  eventFilePath,
+  eventFilePathWithWriter,
   lockFilePath,
-  rejectedFilePath
+  rejectedFilePathWithWriter
 } from "../storage/paths.js";
 
 export interface AppendResult {
@@ -78,7 +78,10 @@ export class StreamWriter {
         return { ok: false, reason, detail };
       }
 
-      await writeJsonAtomic(eventFilePath(this.paths, input.streamId, nextSequence), envelope);
+      await writeJsonAtomic(
+        eventFilePathWithWriter(this.paths, input.streamId, nextSequence, this.processId),
+        envelope
+      );
       return { ok: true, envelope };
     } finally {
       await lock.release();
@@ -112,7 +115,10 @@ export class StreamWriter {
       acceptedSequence
     };
 
-    await writeJsonAtomic(rejectedFilePath(this.paths, streamId, envelope.sequence, reason), rejected);
+    await writeJsonAtomic(
+      rejectedFilePathWithWriter(this.paths, streamId, envelope.sequence, reason, this.processId),
+      rejected
+    );
     await appendJsonLine(auditLogPath(this.paths, streamId), audit);
   }
 }

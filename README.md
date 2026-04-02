@@ -45,12 +45,12 @@ For a stream id like `counter-1`:
 		counter-1/
 			.lock
 			events/
-				0000000001.json
-				0000000002.json
+				0000000001--pid-1234--a1b2c3d4.json
+				0000000002--pid-1234--d4c3b2a1.json
 			snapshots/
 				snapshot-seq-0000000002.json
 			quarantine/
-				rejected-seq-0000000001-validation_failed.json
+				rejected-seq-0000000001-validation_failed-pid-1234-a1b2c3d4.json
 				audit.log.jsonl
 ```
 
@@ -169,8 +169,10 @@ npm test
 ## Notes On Conflict Handling
 
 - Sequence order is authoritative per stream.
+- Event files use sequence-prefixed, writer-unique names to avoid cloud object-name collisions.
 - Payloads are validated against registered JSON Schema by `type@schemaVersion`.
 - Validation/schema failures are rejected and moved to quarantine.
 - Rejections are appended to `audit.log.jsonl` for diagnostics.
+- If multiple files with the same sequence exist (e.g., from multi-client cloud races), replay picks a deterministic canonical winner: earliest timestamp, then lexicographic process id, then filename.
 
 This keeps accepted history clean while preserving rejected events for manual recovery.

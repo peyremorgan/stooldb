@@ -5,6 +5,11 @@ import { listJsonFilesSorted, readJsonFile } from "./fs.js";
 import type { StorePaths } from "../storage/paths.js";
 import { eventsDir, snapshotsDir } from "../storage/paths.js";
 
+interface EventFileCandidate {
+  fileName: string;
+  envelope: EventEnvelope;
+}
+
 export class StreamReader {
   public constructor(private readonly paths: StorePaths) {}
 
@@ -12,14 +17,20 @@ export class StreamReader {
     const eventDirectory = eventsDir(this.paths, streamId);
     const files = await listJsonFilesSorted(eventDirectory).catch(() => [] as string[]);
 
-    const events: EventEnvelope[] = [];
+    const bySequence = new Map<number, EventFileCandidate>();
     for (const file of files) {
       const absolute = path.join(eventDirectory, file);
-      const event = await readJsonFile<EventEnvelope>(absolute);
-      events.push(event);
+      const envelope = await readJsonFile<EventEnvelope>(absolute);
+      const next: EventFileCandidate = { fileName: file, envelope };
+      const existing = bySequence.get(envelope.sequence);
+      if (!existing || compareEventCandidates(next, existing) < 0) {
+        bySequence.set(envelope.sequence, next);
+      }
     }
 
-    return events;
+    return [...bySequence.values()]
+      .sort((left, right) => left.envelope.sequence - right.envelope.sequence)
+      .map((candidate) => candidate.envelope);
   }
 
   public async readEventsAfter(streamId: string, afterSequence: number): Promise<EventEnvelope[]> {
@@ -47,4 +58,18 @@ export class StreamReader {
 
     return readJsonFile<SnapshotRecord<TState>>(path.join(directory, latest));
   }
+}
+
+function compareEventCandidates(left: EventFileCandidate, right: EventFileCandidate): number {
+  const timestampOrder = left.envelope.timestamp.localeCompare(right.envelope.timestamp);
+  if (timestampOrder !== 0) {
+    return timestampOrder;
+  }
+
+  const processOrder = left.envelope.processId.localeCompare(right.envelope.processId);
+  if (processOrder !== 0) {
+    return processOrder;
+  }
+
+  return left.fileName.localeCompare(right.fileName);
 }
