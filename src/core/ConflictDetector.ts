@@ -22,13 +22,5 @@ export function detectConflict(
     };
   }
 
-  if (candidate.timestamp < lastAccepted.timestamp) {
-    return {
-      accepted: false,
-      reason: "timestamp_regression",
-      detail: `Candidate timestamp ${candidate.timestamp} is older than ${lastAccepted.timestamp}`
-    };
-  }
-
   return { accepted: true };
 }

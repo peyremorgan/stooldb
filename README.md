@@ -173,6 +173,7 @@ npm test
 - Payloads are validated against registered JSON Schema by `type@schemaVersion`.
 - Validation/schema failures are rejected and moved to quarantine.
 - Rejections are appended to `audit.log.jsonl` for diagnostics.
-- If multiple files with the same sequence exist (e.g., from multi-client cloud races), replay picks a deterministic canonical winner: earliest timestamp, then lexicographic process id, then filename.
+- If multiple files with the same sequence exist for `StateMutation` events, replay keeps all operations that are compatibility-mergeable and applies them in deterministic order.
+- If same-sequence operations are incompatible, replay keeps a deterministic winner (process id then filename) and drops the loser from replay.
 
 This keeps accepted history clean while preserving rejected events for manual recovery.
