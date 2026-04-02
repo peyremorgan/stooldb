@@ -1,5 +1,5 @@
 # StoolDB
-_Offline-first like CouchDB, but shittier_
+_Offline-first like CouchDB, but less stable and shittier_
 
 ## What It Is
 
