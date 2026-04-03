@@ -1,5 +1,5 @@
 # Reactive state
-Date: 2026-04-02
+Date: 2026-04-02  
 Scope: High-level schema-driven reactive state API on top of StoolDB core
 
 ## Summary of changes

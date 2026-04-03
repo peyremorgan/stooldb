@@ -1,5 +1,5 @@
 # Initial version
-Date: 2026-04-02
+Date: 2026-04-02  
 Scope: Initial implementation of StoolDB core (offline-first file-based event store)
 
 ## Summary of changes
