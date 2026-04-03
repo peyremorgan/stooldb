@@ -25,3 +25,20 @@ test("file lock acquires and releases", async () => {
   assert.equal(thirdAcquired, true);
   await third.release();
 });
+
+test("stale lock file blocks acquisition until manual cleanup", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "stooldb-stale-lock-"));
+  const lockPath = path.join(root, ".lock");
+
+  await fs.writeFile(lockPath, "orphaned-lock", "utf-8");
+
+  const lock = new FileLock(lockPath);
+  const acquiredWhileStale = await lock.acquire({ timeoutMs: 80, retryDelayMs: 10 });
+  assert.equal(acquiredWhileStale, false);
+
+  await fs.unlink(lockPath);
+
+  const acquiredAfterCleanup = await lock.acquire({ timeoutMs: 120, retryDelayMs: 10 });
+  assert.equal(acquiredAfterCleanup, true);
+  await lock.release();
+});
